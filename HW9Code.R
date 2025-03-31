@@ -1,0 +1,91 @@
+###########################################################################
+# HW 9
+# Avery Johnson
+# MATH 240 - SPRING 2025
+###########################################################################
+library(tidyverse)
+
+################################################################################
+# Precipitation in Madison County
+################################################################################
+dat.precip <- read_csv(file = "agacis.csv")
+
+#####################################
+# Clean Data
+#####################################
+dat.precip.long <- dat.precip |>    
+  dplyr::select(-Annual) |>                   # Remove annual column 
+  pivot_longer(cols = c(Jan, Feb, Mar, Apr,   # pivot the column data into one col
+                        May, Jun, Jul, Aug, 
+                        Sep, Oct, Nov, Dec), 
+               values_to = "Precipitation",   # store the values in Precipitation
+               names_to = "Month") |>         # store the months in Month
+  mutate(Precipitation = case_when(Precipitation == "M" ~ NA_character_,
+                                   TRUE                 ~ Precipitation))|>
+  mutate(Precipitation = as.numeric(Precipitation))
+
+###########################################################################
+# Weibull
+###########################################################################
+llweibull <- function(par, data, neg=F){
+  # a <- par[1]
+  # sigma <- par[2]
+  a <- exp(par[1]) # go from (-inf,inf) to (0,inf)
+  sigma <- exp(par[2]) # go from (-inf,inf) to (0,inf)
+  
+  ll <- sum(log(dweibull(x=data, shape=a, scale=sigma)), na.rm=T)
+  
+  return(ifelse(neg, -ll, ll))
+}
+
+MLEs <- optim(fn = llweibull,
+              par = c(1,1),
+              data = dat.precip.long$Precipitation,
+              neg=T)
+
+(MLEs$par <- exp(MLEs$par)) # transform
+
+###########################################################################
+# a) Compute the MLEs for these data using a Gamma distribution
+###########################################################################
+
+llgamma <- function(par, data, neg=F){
+  alpha <- par[1]
+  beta <- par[2]
+  
+  ll <- sum(log(dgamma(x=data, shape=alpha, scale=beta)), na.rm=T)
+  
+  return(ifelse(neg, -ll, ll))
+}
+
+MLEs_gamma <- optim(fn = llgamma,
+              par = c(1,1),
+              data = dat.precip.long$Precipitation,
+              neg=T)
+
+MLEs_gamma$par
+
+###########################################################################
+# b) Compute the MLEs for these data using the Log-Normal distribution
+###########################################################################
+
+lllognorm <- function(par, data, neg=F){
+  mu <- par[1]
+  sigma <- par[2]
+  
+  ll <- sum(log(dlnorm(x=data, meanlog=mu, sdlog=sigma)), na.rm=T)
+  
+  return(ifelse(neg, -ll, ll))
+}
+
+MLEs_lognorm <- optim(fn = lllognorm,
+                    par = c(1,1),
+                    data = dat.precip.long$Precipitation,
+                    neg=T)
+
+MLEs_lognorm$par
+
+###########################################################################
+# c)  Compute the likelihood ratio to compare the Weibull and the Gamma dist
+###########################################################################
+
