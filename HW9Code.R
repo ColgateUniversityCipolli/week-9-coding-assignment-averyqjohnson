@@ -63,7 +63,7 @@ MLEs_gamma <- optim(fn = llgamma,
               data = dat.precip.long$Precipitation,
               neg=T)
 
-MLEs_gamma$par
+(MLEs_gamma$par)
 
 ###########################################################################
 # b) Compute the MLEs for these data using the Log-Normal distribution
@@ -83,9 +83,34 @@ MLEs_lognorm <- optim(fn = lllognorm,
                     data = dat.precip.long$Precipitation,
                     neg=T)
 
-MLEs_lognorm$par
+(MLEs_lognorm$par)
 
 ###########################################################################
 # c)  Compute the likelihood ratio to compare the Weibull and the Gamma dist
 ###########################################################################
 
+# compute the log-likelihood values at MLEs
+ll_weibull <- llweibull(par = MLEs$par, data=dat.precip.long$Precipitation,
+                        neg=F)
+ll_gamma <- llgamma(par = MLEs_gamma$par, data=dat.precip.long$Precipitation, 
+                    neg=F)
+
+#compute the likelihood ratio
+(ratio_w_g <- exp(ll_weibull-ll_gamma))
+
+###########################################################################
+# d)  Compute the likelihood ratio to compare the Weibull and the Lognormal dist
+###########################################################################
+
+# compute the log-likelihood values at MLEs
+ll_lognorm <- lllognorm(par = MLEs_lognorm$par, data=dat.precip.long$Precipitation, neg=F)
+
+#compute the likelihood ratio
+(ratio_w_ln <- exp(ll_weibull-ll_lognorm))
+
+###########################################################################
+# e)  Compute the likelihood ratio to compare the Gamma and the Lognormal dist
+###########################################################################
+(ratio_g_ln <- exp(ll_gamma-ll_lognorm))
+
+ 
