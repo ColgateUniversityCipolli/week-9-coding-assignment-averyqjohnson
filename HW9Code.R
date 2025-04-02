@@ -24,6 +24,21 @@ dat.precip.long <- dat.precip |>
                                    TRUE                 ~ Precipitation))|>
   mutate(Precipitation = as.numeric(Precipitation))
 
+#####################################
+# Summarize the data
+#####################################
+
+library(e1071)
+dat.precip.long |>
+  summarize(
+    mean = mean(Precipitation, na.rm=T),
+    sd = sd(Precipitation, na.rm=T),
+    min = min(Precipitation, na.rm=T),
+    max = max(Precipitation, na.rm=T),
+    skew = skewness(Precipitation, na.rm=T),
+    kurt = kurtosis(Precipitation, na.rm=T)
+  )
+
 ###########################################################################
 # Weibull
 ###########################################################################
@@ -37,7 +52,6 @@ llweibull <- function(par, data, neg=F){
   
   return(ifelse(neg, -ll, ll))
 }
-
 MLEs <- optim(fn = llweibull,
               par = c(1,1),
               data = dat.precip.long$Precipitation,
@@ -48,10 +62,9 @@ MLEs <- optim(fn = llweibull,
 ###########################################################################
 # a) Compute the MLEs for these data using a Gamma distribution
 ###########################################################################
-
 llgamma <- function(par, data, neg=F){
-  alpha <- par[1]
-  beta <- par[2]
+  alpha <- exp(par[1])
+  beta <- exp(par[2])
   
   ll <- sum(log(dgamma(x=data, shape=alpha, scale=beta)), na.rm=T)
   
@@ -63,7 +76,7 @@ MLEs_gamma <- optim(fn = llgamma,
               data = dat.precip.long$Precipitation,
               neg=T)
 
-(MLEs_gamma$par)
+(MLEs_gamma$par <- exp(MLEs_gamma$par)) # transform
 
 ###########################################################################
 # b) Compute the MLEs for these data using the Log-Normal distribution
@@ -71,7 +84,7 @@ MLEs_gamma <- optim(fn = llgamma,
 
 lllognorm <- function(par, data, neg=F){
   mu <- par[1]
-  sigma <- par[2]
+  sigma <- exp(par[2])
   
   ll <- sum(log(dlnorm(x=data, meanlog=mu, sdlog=sigma)), na.rm=T)
   
@@ -83,17 +96,15 @@ MLEs_lognorm <- optim(fn = lllognorm,
                     data = dat.precip.long$Precipitation,
                     neg=T)
 
-(MLEs_lognorm$par)
-
+(MLEs_lognorm$par[1])
+(exp(MLEs_lognorm$par[2]))
 ###########################################################################
 # c)  Compute the likelihood ratio to compare the Weibull and the Gamma dist
 ###########################################################################
 
 # compute the log-likelihood values at MLEs
-ll_weibull <- llweibull(par = MLEs$par, data=dat.precip.long$Precipitation,
-                        neg=F)
-ll_gamma <- llgamma(par = MLEs_gamma$par, data=dat.precip.long$Precipitation, 
-                    neg=F)
+ll_weibull <- -2166.496
+ll_gamma <- -MLEs_gamma$value
 
 #compute the likelihood ratio
 (ratio_w_g <- exp(ll_weibull-ll_gamma))
@@ -103,7 +114,7 @@ ll_gamma <- llgamma(par = MLEs_gamma$par, data=dat.precip.long$Precipitation,
 ###########################################################################
 
 # compute the log-likelihood values at MLEs
-ll_lognorm <- lllognorm(par = MLEs_lognorm$par, data=dat.precip.long$Precipitation, neg=F)
+ll_lognorm <- -MLEs_lognorm$value
 
 #compute the likelihood ratio
 (ratio_w_ln <- exp(ll_weibull-ll_lognorm))
@@ -112,5 +123,3 @@ ll_lognorm <- lllognorm(par = MLEs_lognorm$par, data=dat.precip.long$Precipitati
 # e)  Compute the likelihood ratio to compare the Gamma and the Lognormal dist
 ###########################################################################
 (ratio_g_ln <- exp(ll_gamma-ll_lognorm))
-
- 

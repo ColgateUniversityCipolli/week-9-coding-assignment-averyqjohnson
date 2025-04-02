@@ -88,17 +88,169 @@ which \texttt{R} cannot differentiate from 0.
   another right-skewed distribution like the Gamma (see Lecture 15), or
   the Log-Normal (see Lecture 17).
   \begin{enumerate}
-    \item Compute the MLEs for these data using a Gamma distribution. 
+    \item Compute the MLEs for these data using a Gamma distribution.
+
+\begin{knitrout}\scriptsize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{verbatim}
+## # A tibble: 1 x 6
+##    mean    sd   min   max  skew  kurt
+##   <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
+## 1  3.51  1.69   0.1  12.3  1.02  1.92
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+
+\begin{knitrout}\scriptsize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlcom{###########################################################################}
+\hlcom{# a) Compute the MLEs for these data using a Gamma distribution}
+\hlcom{###########################################################################}
+\hldef{llgamma} \hlkwb{<-} \hlkwa{function}\hldef{(}\hlkwc{par}\hldef{,} \hlkwc{data}\hldef{,} \hlkwc{neg}\hldef{=F)\{}
+  \hldef{alpha} \hlkwb{<-} \hlkwd{exp}\hldef{(par[}\hlnum{1}\hldef{])}
+  \hldef{beta} \hlkwb{<-} \hlkwd{exp}\hldef{(par[}\hlnum{2}\hldef{])}
+
+  \hldef{ll} \hlkwb{<-} \hlkwd{sum}\hldef{(}\hlkwd{log}\hldef{(}\hlkwd{dgamma}\hldef{(}\hlkwc{x}\hldef{=data,} \hlkwc{shape}\hldef{=alpha,} \hlkwc{scale}\hldef{=beta)),} \hlkwc{na.rm}\hldef{=T)}
+
+  \hlkwd{return}\hldef{(}\hlkwd{ifelse}\hldef{(neg,} \hlopt{-}\hldef{ll, ll))}
+\hldef{\}}
+
+\hldef{MLEs_gamma} \hlkwb{<-} \hlkwd{optim}\hldef{(}\hlkwc{fn} \hldef{= llgamma,}
+              \hlkwc{par} \hldef{=} \hlkwd{c}\hldef{(}\hlnum{1}\hldef{,}\hlnum{1}\hldef{),}
+              \hlkwc{data} \hldef{= dat.precip.long}\hlopt{$}\hldef{Precipitation,}
+              \hlkwc{neg}\hldef{=T)}
+
+\hldef{(MLEs_gamma}\hlopt{$}\hldef{par} \hlkwb{<-} \hlkwd{exp}\hldef{(MLEs_gamma}\hlopt{$}\hldef{par))} \hlcom{# transform}
+\end{alltt}
+\begin{verbatim}
+## [1] 4.1761219 0.8405941
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+
+To estimate the parameters of the Gamma distribution, we used maximum likelihood estimation (MLE). The estimated parameters are:
+
+$$ \hat{\alpha} = 4.176, \quad \hat{\beta} = 0.841 $$
+
+We followed the same MLE process as in class, using \texttt{optim()} to find the values of $\hat{\alpha}$ and $\hat{\beta}$ that maximize the likelihood function. Of particular note is our transformation of $\alpha$ and $\beta$. Since the shape ($\alpha$) and scale($\beta$) parameters of the Gamma distribution must be positive, we transformed them as $ \alpha = \exp(\alpha), \quad \beta = \exp(\beta) $. This ensures the \texttt{optim()} algorithm operates over the entire real number space while keeping the parameters strictly positive. 
+
     \item Compute the MLEs for these data using the Log-Normal distribution.
+  
+\begin{knitrout}\scriptsize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlcom{###########################################################################}
+\hlcom{# b) Compute the MLEs for these data using the Log-Normal distribution}
+\hlcom{###########################################################################}
+
+\hldef{lllognorm} \hlkwb{<-} \hlkwa{function}\hldef{(}\hlkwc{par}\hldef{,} \hlkwc{data}\hldef{,} \hlkwc{neg}\hldef{=F)\{}
+  \hldef{mu} \hlkwb{<-} \hldef{par[}\hlnum{1}\hldef{]}
+  \hldef{sigma} \hlkwb{<-} \hlkwd{exp}\hldef{(par[}\hlnum{2}\hldef{])}
+
+  \hldef{ll} \hlkwb{<-} \hlkwd{sum}\hldef{(}\hlkwd{log}\hldef{(}\hlkwd{dlnorm}\hldef{(}\hlkwc{x}\hldef{=data,} \hlkwc{meanlog}\hldef{=mu,} \hlkwc{sdlog}\hldef{=sigma)),} \hlkwc{na.rm}\hldef{=T)}
+
+  \hlkwd{return}\hldef{(}\hlkwd{ifelse}\hldef{(neg,} \hlopt{-}\hldef{ll, ll))}
+\hldef{\}}
+
+\hldef{MLEs_lognorm} \hlkwb{<-} \hlkwd{optim}\hldef{(}\hlkwc{fn} \hldef{= lllognorm,}
+                    \hlkwc{par} \hldef{=} \hlkwd{c}\hldef{(}\hlnum{1}\hldef{,}\hlnum{1}\hldef{),}
+                    \hlkwc{data} \hldef{= dat.precip.long}\hlopt{$}\hldef{Precipitation,}
+                    \hlkwc{neg}\hldef{=T)}
+
+\hldef{(MLEs_lognorm}\hlopt{$}\hldef{par[}\hlnum{1}\hldef{])}
+\end{alltt}
+\begin{verbatim}
+## [1] 1.131308
+\end{verbatim}
+\begin{alltt}
+\hldef{(}\hlkwd{exp}\hldef{(MLEs_lognorm}\hlopt{$}\hldef{par[}\hlnum{2}\hldef{]))}
+\end{alltt}
+\begin{verbatim}
+## [1] 0.5333176
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+
+To estimate the parameters of the Log-Normal distribution, we used maximum likelihood estimation (MLE). The estimated parameters are:
+
+$$ \hat{\mu} = 1.131, \quad \hat{\sigma} = 0.533 $$
+
+Since the standard deviation parameter ($\sigma$) must be positive we applied the transformation as above. However, the mean parameter $\mu$ does not have the same restrictions, so there was no need to transform that parameter value. Once again, we followed the same MLE procedures.
+  
     \item Compute the likelihood ratio to compare the Weibull and the Gamma distribution. 
     Which has a better fit according to the likelhiood ratio?
     \[Q = \frac{L(\{\hat{a}, \hat{\sigma}\}|\mathbf{x})}{L(\{\hat{\alpha}, \hat{\beta}\}|\mathbf{x})}=e^{\left[\mathcal{L}(\{\hat{a}, \hat{\sigma}\}|\mathbf{x}) - \mathcal{L}(\{\hat{\alpha}, \hat{\beta}\}|\mathbf{x})\right]}\]
+    
+\begin{knitrout}\scriptsize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlcom{###########################################################################}
+\hlcom{# c)  Compute the likelihood ratio to compare the Weibull and the Gamma dist}
+\hlcom{###########################################################################}
+
+\hlcom{# compute the log-likelihood values at MLEs}
+\hldef{ll_weibull} \hlkwb{<-} \hlopt{-}\hlnum{2166.496}
+\hldef{ll_gamma} \hlkwb{<-} \hlopt{-}\hldef{MLEs_gamma}\hlopt{$}\hldef{value}
+
+\hlcom{#compute the likelihood ratio}
+\hldef{(ratio_w_g} \hlkwb{<-} \hlkwd{exp}\hldef{(ll_weibull}\hlopt{-}\hldef{ll_gamma))}
+\end{alltt}
+\begin{verbatim}
+## [1] 2.161379e-07
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+
+To compare the Weibull and Gamma distributions, we computed the likelihood ratio, which gave us the value of $Q = 2.16 \times 10^{-7}$. From this, we determine that the Gamma distribution provides a better fit than the Weibull distribution, as the likelihood ratio is much smaller than 1. This suggests that the Gamma model captures the precipitation data more effectively.
+
     \item Compute the likelihood ratio to compare the Weibull and the Log-Normal distribution.
     Which has a better fit according to the likelihood ratio?
     \[Q = \frac{L(\{\hat{a}, \hat{\sigma}\}|\mathbf{x})}{L(\{\hat{\mu}, \hat{\sigma}\}|\mathbf{x})}=e^{\left[\mathcal{L}(\{\hat{a}, \hat{\sigma}\}|\mathbf{x}) - \mathcal{L}(\{\hat{\mu}, \hat{\sigma}\}|\mathbf{x})\right]}\]
+    
+\begin{knitrout}\scriptsize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlcom{###########################################################################}
+\hlcom{# d)  Compute the likelihood ratio to compare the Weibull and the Lognormal dist}
+\hlcom{###########################################################################}
+
+\hlcom{# compute the log-likelihood values at MLEs}
+\hldef{ll_lognorm} \hlkwb{<-} \hlopt{-}\hldef{MLEs_lognorm}\hlopt{$}\hldef{value}
+
+\hlcom{#compute the likelihood ratio}
+\hldef{(ratio_w_ln} \hlkwb{<-} \hlkwd{exp}\hldef{(ll_weibull}\hlopt{-}\hldef{ll_lognorm))}
+\end{alltt}
+\begin{verbatim}
+## [1] 2.370639e+16
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+  
+Similarly, we compared the Weibull and Log-Normal distributions using the likelihood ratio, which gave us the value of $Q=2.37 \times 10^{16}$. This result is extremely large, indicating that the Weibull distribution fits the data far better than the Log-Normal distribution. This suggests that the Log-Normal model is a poor choice compared to the Weibull model.
+  
     \item Compute the likelihood ratio to compare the Gamma and the Log-Normal distribution.
     Which has a better fit according to the likelhiood ratio?
     \[Q = \frac{L(\{\hat{\alpha}, \hat{\beta}\}|\mathbf{x})}{L(\{\hat{\mu}, \hat{\sigma}\}|\mathbf{x})}=e^{\left[\mathcal{L}(\{\hat{\alpha}, \hat{\beta}\}|\mathbf{x}) - \mathcal{L}(\{\hat{\mu}, \hat{\sigma}\}|\mathbf{x})\right]}\]
+    
+\begin{knitrout}\scriptsize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlcom{###########################################################################}
+\hlcom{# e)  Compute the likelihood ratio to compare the Gamma and the Lognormal dist}
+\hlcom{###########################################################################}
+\hldef{(ratio_g_ln} \hlkwb{<-} \hlkwd{exp}\hldef{(ll_gamma}\hlopt{-}\hldef{ll_lognorm))}
+\end{alltt}
+\begin{verbatim}
+## [1] 1.096818e+23
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+
+Finally, we computed the likelihood ratio comparing the Gamma and Log-Normal distributions, which gave us the value of $Q = 1.10 \times 10^{23}$, which is overwhelmingly large. This suggests the Gamma distribution provides a much better fit than the Log-Normal distribtion, reinforcing the conclusion that the Log-Normal model is the weakest among the three considered distributions.
+
+Overall, among the three distributions, the Gamma distribution is best fit for the data, as it outperforms both the Weibull and Log-Normal distributions. The second best choice is the Weibull distribution, and the Log-Normal distribution is the worst choice as its likelihood is significantly lower than both the Gamma and Weibull distributions.
+
   \end{enumerate}
   \item Optional Coding Challenge. Choose the ``best" distribution and refit the
   model by season.
